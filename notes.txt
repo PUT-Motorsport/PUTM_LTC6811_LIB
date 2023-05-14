@@ -1,0 +1,5 @@
+- ADOW Command
+- Accuracy check
+- mux decoder check
+- ADSTATD - check with redundancy
+watchdog 2 sec
