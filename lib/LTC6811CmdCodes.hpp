@@ -50,7 +50,14 @@ struct RCmd
 };
 
 // or operator for 16bit sized enums
-template < typename T, std::enable_if_t<std::is_enum_v<T> && sizeof(T) == 2, bool> = true >
+template
+<
+	typename T,
+	std::enable_if_t
+	<
+		std::is_enum_v<T> && sizeof(T) == 2,
+	bool> = true
+>
 constexpr static inline uint16_t operator | (uint16_t n, T e)
 {
 	return static_cast<uint16_t>(e) | n;

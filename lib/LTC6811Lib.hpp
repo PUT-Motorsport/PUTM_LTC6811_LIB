@@ -19,40 +19,82 @@
 #include <cstring>
 #include <type_traits>
 
-struct WrRdRegisterGroup
+// dummy structs for clarification for other shit
+struct WrRdRegisterGroup { };
+struct RdRegisterGroup { };
+
+// TODO?: make serialization of reg group only possible for
+// WrRdRegisterGroup?
+template
+<
+	typename RegisterGroup,
+	std::enable_if_t
+	<
+		( std::is_base_of_v < WrRdRegisterGroup, RegisterGroup > 	||
+		std::is_base_of_v < RdRegisterGroup, RegisterGroup > ) 		&&
+		sizeof(RegisterGroup) == 6,
+	bool > = true
+>
+inline std::array < uint8_t, 6 > serializeRegisterGroup(const RegisterGroup &data)
 {
-	/*
-	 * per doc's specification one reg group consists of 6 x 8bit registers
-	 */
-	inline std::array < uint8_t, 6 > serialize()
-	{
-		assert(sizeof(*this) == 6);
-		std::array < uint8_t, 6 > buff { 0 };
-		std::memcpy(buff.data(), this, 6);
-		return buff;
-	}
+	std::array < uint8_t, 6 > buff { 0 };
+	std::memcpy(buff.data(), &data, 6);
+	return buff;
+}
 
-	virtual ~WrRdRegisterGroup() = 0;
-};
-
-struct RdRegisterGroup
+template
+<
+	typename RegisterGroup,
+	std::enable_if_t
+	<
+		( std::is_base_of_v < WrRdRegisterGroup, RegisterGroup > 	||
+		std::is_base_of_v < RdRegisterGroup, RegisterGroup > )		&&
+		sizeof(RegisterGroup) == 6,
+	bool > = true
+>
+inline RegisterGroup deserializeRegisterGroup(const std::array < uint8_t, 6 > &data)
 {
-	/*
-	 * per doc's specification one reg group consists of 6 x 8bit registers
-	 */
-	inline std::array < uint8_t, 6 > serialize()
-	{
-		assert(sizeof(*this) == 6);
-		std::array < uint8_t, 6 > buff { 0 };
-		std::memcpy(buff.data(), this, 6);
-		return buff;
-	}
+	RegisterGroup buff;
+	std::memcpy(&buff, data.data(), 6);
+	return buff;
+}
 
-	virtual ~RdRegisterGroup() = 0;
-};
+template
+<
+	typename RegisterGroup,
+	std::enable_if_t
+	<
+		( std::is_base_of_v < WrRdRegisterGroup, RegisterGroup > 	||
+		std::is_base_of_v < RdRegisterGroup, RegisterGroup > )		&&
+		sizeof(RegisterGroup) == 6,
+	bool > = true
+>
+inline RegisterGroup deserializeRegisterGroup(uint8_t const *begin, uint8_t const *end) // FIXME: don't pretend to be ranged based ...
+{
+	RegisterGroup buff;
+	std::memcpy(&buff, begin, 6);
+	return buff;
+}
 
 struct LTC6811
 {
+	constexpr static float cell_v_conv_coef = 0.000'1f;
+	constexpr static float tmp_conv_coef = 0.000'1f / 0.007'5f;
+
+	struct DataConverter
+	{
+		// convert ADC to cell voltage returns in [V]
+		static inline float CellVConv(uint16_t value)
+		{
+			return float(value) * cell_v_conv_coef;
+		}
+
+		// internal die temperature returns in [*C]
+		static inline float IntTmpConv(uint16_t value)
+		{
+			return float(value) * tmp_conv_coef - 273.f;
+		}
+	};
 	//data management
 	struct RegisterStructure
 	{

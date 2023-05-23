@@ -3,3 +3,5 @@
 - mux decoder check
 - ADSTATD - check with redundancy
 watchdog 2 sec
+
+kill meeeeee
